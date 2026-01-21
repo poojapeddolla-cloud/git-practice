@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<flow name="batch-processing-flow">
+    <scheduler doc:name="Scheduler" doc:id="b4f28e30-aeb7-4e29-8d38-e72aaf05581e" >
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</scheduler>
+		<set-payload value='[1,2,3,4,5,6,"a","b"]' />
+
+    <batch:job maxFailedRecords="-1" blockSize="4" jobName="Batch_Job1">
+        <batch:process-records>
+
+            <!-- STEP 1 -->
+            <batch:step name="multiply-by-20">
+                <choice>
+                    <!-- allow only numbers -->
+                    <when expression="#[payload is Number]">
+                        <set-payload value="#[payload * 20]" />
+                    </when>
+
+                    <!-- force failure for non-numbers -->
+                    <otherwise>
+                        <raise-error type="BATCH:INVALID_RECORD"
+                                     description="Non-numeric value" />
+                    </otherwise>
+                </choice>
+            </batch:step>
+
+            <!-- STEP 2 (will run only for failed records) -->
+            <batch:step name="failed-records"
+                        acceptPolicy="ONLY_FAILURES">
+                <logger level="ERROR"
+                        message="Failed record: #[payload]" />
+            </batch:step>
+
+        </batch:process-records>
+    </batch:job>
+</flow></mule>
