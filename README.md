@@ -1,1 +1,1 @@
-# git-practice
+# git clone process practice
